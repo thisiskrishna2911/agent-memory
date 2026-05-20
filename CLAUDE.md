@@ -254,6 +254,14 @@ Before writing code, ask:
 - Can this be solved via composition instead?
 - Does this improve DX for all providers?
 
+## Documentation Artifacts (Spec / Plan / DX)
+
+Specs and plans under `docs/superpowers/` are dual-format: every `.md` gets a companion `.html`.
+
+- **HTML is independently authored, never converted.** After writing a `spec.md` or `plan.md`, dispatch a subagent that uses the `frontend-design` skill to author a complete, standalone `.html` at the sibling path. Do NOT run any Markdown-to-HTML parser or converter. Brief the subagent with the existing `docs/superpowers/specs/*-design.html` files as visual-identity references so the document family stays cohesive.
+- **DX overview offer.** After a design spec is approved during brainstorming — after the spec user-review gate passes and BEFORE invoking `writing-plans` — ask the user: "Want a DX overview HTML for this API?" If yes, invoke the `writing-dx-overview` skill. If no, proceed straight to `writing-plans`.
+- The DX overview is HTML-native (no `.md` twin) and hand-authored with the `frontend-design` skill.
+
 ## Branch Discipline
 
 - Before any code changes, verify the current branch and base (`git branch --show-current`, `git log --oneline -5`).
