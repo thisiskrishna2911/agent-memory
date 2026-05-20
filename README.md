@@ -1,0 +1,2 @@
+# claude
+Setup for claude
