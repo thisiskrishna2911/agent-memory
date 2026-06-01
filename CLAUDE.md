@@ -246,6 +246,12 @@ Pipeline(
   - destroys cost efficiency
 - **Tight coupling to providers**
   - breaks abstraction layer
+## Streaming & Audio
+
+- Before changing a streaming/audio default (flush, channels, sample rate, chunk size, lazy-connect), diff the behavior against a known-good reference implementation (e.g. LiveKit) — don't tune defaults blind.
+- A fix that removes one symptom (TTS doubling) commonly introduces another (TTFB / cold-start regression, duplicate chunks). After any streaming fix, explicitly re-check TTFB and chunk-count before declaring done.
+- VideoSDK emits stereo Opus at 48kHz — verify channel/rate assumptions against the actual wire input, not provider defaults.
+
 ## When Modifying the SDK
 
 Before writing code, ask:
@@ -275,8 +281,15 @@ Specs and plans under `docs/superpowers/` are dual-format: every `.md` gets a co
 - Use canonical keys only (e.g., `sarvamai`, not both `sarvam` and `sarvamai`). Reuse existing canonical names; do not introduce aliases.
 - For multi-file refactors, list the exact files and lines to be changed before starting. Do not touch anything outside that list without confirming first.
 
+## Pricing & Billing Data
+
+- Verify every price against the provider's official pricing page before reporting done. Never store a remembered or estimated number.
+- STT bills **per-second**, not per-minute `Math.ceil`. Don't defend minute-rounding as "industry standard."
+- Double-check unit precision (don't over-extend to pico); flag rounding-limit edge cases explicitly rather than silently picking one.
+
 ## Debugging Protocol
 
+- **Lock the live code path before editing.** Multiple variants of a provider often coexist (e.g. the `videosdk-plugins-*` package vs. an app-local `src/llm/*_http_llm.py`). Confirm from the logs/stack which module the running server actually imports — show the file path — *before* editing. Never assume the plugin package is the active one.
 - **Probe before hypothesizing.** For SDK / provider integration bugs, capture the actual wire format first (`curl -v`, network logs, real request/response body) before forming theories. "Show me the bytes" beats speculation every time.
 - Don't blame the build. When imports fail, verify the package actually exports the symbol (`python -c "from x import y"`, inspect `__init__.py`) before assuming Docker cache or build issues.
 - **Diff against last known-working version** when chasing a regression (e.g., `v1.0.3` vs `v1.0.4`). Version comparisons surface real changes; speculation does not.
