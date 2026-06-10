@@ -16,6 +16,9 @@ dev = [
 pythonpath = ["src"]
 testpaths = ["tests"]
 
+[project.scripts]
+agent-memory = "agent_memory.server:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
