@@ -1,6 +1,7 @@
 """MCP server exposing 10 memory tools backed by the tested core library."""
 from __future__ import annotations
 
+import functools
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
@@ -8,8 +9,22 @@ from mcp.server.fastmcp import FastMCP
 from . import graph, identity, notes_write, search, sessions, vault
 from .active import write_pointer
 from .config import ACTIVE_FILE, RESUME_K, vault_root
+from .notify import notify
 
 mcp = FastMCP("agent-memory")
+
+
+def _notified(fn):
+    """Fire a desktop notification whenever this tool is invoked.
+
+    `functools.wraps` preserves the signature/annotations FastMCP introspects
+    to build each tool's input schema.
+    """
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        notify(fn.__name__)
+        return fn(*args, **kwargs)
+    return wrapper
 
 
 def _root() -> Path:
@@ -27,6 +42,7 @@ def _safe(root: Path, rel: str) -> Path:
 
 
 @mcp.tool()
+@_notified
 def memory_list_projects(cwd: str = ".") -> dict:
     """List known project slugs and identity signals for the current folder.
 
@@ -41,6 +57,7 @@ def memory_list_projects(cwd: str = ".") -> dict:
 
 
 @mcp.tool()
+@_notified
 def memory_search(query: str, scope: str | None = None,
                   project: str | None = None, type: str | None = None,
                   limit: int = 10) -> list[dict]:
@@ -50,6 +67,7 @@ def memory_search(query: str, scope: str | None = None,
 
 
 @mcp.tool()
+@_notified
 def memory_read(path: str) -> dict:
     """Read one full note by its vault-relative path."""
     note = vault.read_note(_safe(_root(), path))
@@ -58,6 +76,7 @@ def memory_read(path: str) -> dict:
 
 
 @mcp.tool()
+@_notified
 def memory_traverse(path: str, depth: int = 1) -> list[dict]:
     """Return notes linked from `path` within `depth` hops (snippets only)."""
     root = _root()
@@ -66,12 +85,14 @@ def memory_traverse(path: str, depth: int = 1) -> list[dict]:
 
 
 @mcp.tool()
+@_notified
 def memory_recent(project: str, limit: int = 5) -> list[dict]:
     """Recent sessions for a project, newest first."""
     return sessions.recent(_root(), project, limit=limit)
 
 
 @mcp.tool()
+@_notified
 def memory_resume(project: str, cwd: str = ".") -> dict:
     """One-shot rehydrate: the latest session snapshots for a project.
 
@@ -88,6 +109,7 @@ def memory_resume(project: str, cwd: str = ".") -> dict:
 
 
 @mcp.tool()
+@_notified
 def memory_checkpoint(project: str, task: str, summary: str,
                       files: list[str] | None = None,
                       next_steps: list[str] | None = None,
@@ -105,6 +127,7 @@ def memory_checkpoint(project: str, task: str, summary: str,
 
 
 @mcp.tool()
+@_notified
 def memory_note(type: str, scope: str, title: str, body: str,
                 project: str | None = None,
                 links: list[str] | None = None) -> dict:
@@ -117,6 +140,7 @@ def memory_note(type: str, scope: str, title: str, body: str,
 
 
 @mcp.tool()
+@_notified
 def memory_promote(session_path: str, as_type: str) -> dict:
     """Promote a session insight into a durable note linking back to its origin."""
     root = _root()
@@ -126,6 +150,7 @@ def memory_promote(session_path: str, as_type: str) -> dict:
 
 
 @mcp.tool()
+@_notified
 def memory_define_project(slug: str, marker_dir: str | None = None) -> dict:
     """Register a new project; optionally drop a committed .agentmemory marker."""
     md = Path(marker_dir).expanduser().resolve() if marker_dir else None
