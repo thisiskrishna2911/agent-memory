@@ -1,7 +1,7 @@
 # Agent Memory System — Design Spec
 
 **Date:** 2026-06-10
-**Status:** Approved design — pending implementation plan
+**Status:** Implemented (v1)
 **Project root:** `~/Desktop/agent-memory/` (git: `krishna-videosdk/claude`)
 **Vault:** `~/Documents/agentMemory` (existing Obsidian vault)
 
