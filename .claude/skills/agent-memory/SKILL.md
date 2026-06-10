@@ -38,6 +38,20 @@ abrupt power-off.
 - A cross-project preference or convention → `memory_note(scope="global", ...)`.
 - A session insight worth keeping → `memory_promote(session_path, as_type)`.
 
+## Ghost links — resolve them right after writing
+
+`memory_checkpoint`, `memory_note`, and `memory_promote` return a `ghost_links`
+field (plus a `warning`) when a `[[link]]` you just wrote points to a note that
+doesn't exist yet. **Whenever you see `ghost_links` in a write result, resolve each
+one before moving on** — don't leave dangling links, they break graph traversal:
+
+- If the target *should* exist → create it with `memory_note` (then the link resolves).
+- If it was a typo'd slug → rewrite the note with the correct target title/slug.
+- If the link was unintended → remove it and re-save the note.
+
+If you genuinely mean it as a forward-reference placeholder, say so explicitly to
+the user rather than silently leaving it dangling.
+
 ## Catching mistakes
 
 Before acting on something that smells like a prior decision (auth, storage,

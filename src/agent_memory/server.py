@@ -9,9 +9,23 @@ from mcp.server.fastmcp import FastMCP
 from . import graph, identity, notes_write, search, sessions, vault
 from .active import write_pointer
 from .config import ACTIVE_FILE, RESUME_K, vault_root
+from .links import find_ghost_links
 from .notify import notify
 
 mcp = FastMCP("agent-memory")
+
+
+def _with_ghosts(root: Path, rel: str, payload: dict) -> dict:
+    """Attach a ghost-link warning to a write result if the note has dangling links."""
+    ghosts = find_ghost_links(root, rel)
+    if ghosts:
+        payload["ghost_links"] = [f"[[{g}]]" for g in ghosts]
+        payload["warning"] = (
+            f"{len(ghosts)} link(s) point to notes that don't exist yet: "
+            + ", ".join(payload["ghost_links"])
+            + ". Create the missing note(s), fix the slug, or remove the link."
+        )
+    return payload
 
 
 def _notified(fn):
@@ -123,7 +137,7 @@ def memory_checkpoint(project: str, task: str, summary: str,
     write_pointer(ACTIVE_FILE, project=project,
                   project_path=str(Path(cwd).expanduser().resolve()),
                   session_note=rel)
-    return {"saved": rel}
+    return _with_ghosts(root, rel, {"saved": rel})
 
 
 @mcp.tool()
@@ -136,7 +150,8 @@ def memory_note(type: str, scope: str, title: str, body: str,
     path = notes_write.write_durable(root, type=type, scope=scope,
                                      title=title, body=body, project=project,
                                      links=links)
-    return {"saved": str(path.relative_to(root))}
+    rel = str(path.relative_to(root))
+    return _with_ghosts(root, rel, {"saved": rel})
 
 
 @mcp.tool()
@@ -146,7 +161,8 @@ def memory_promote(session_path: str, as_type: str) -> dict:
     root = _root()
     _safe(root, session_path)  # reject traversal before reading the session
     path = notes_write.promote(root, session_path, as_type=as_type)
-    return {"saved": str(path.relative_to(root))}
+    rel = str(path.relative_to(root))
+    return _with_ghosts(root, rel, {"saved": rel})
 
 
 @mcp.tool()
