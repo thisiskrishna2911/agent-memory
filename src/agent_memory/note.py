@@ -38,6 +38,8 @@ class Note:
             meta["project"] = self.project
         if self.status:
             meta["status"] = self.status
+        if self.title:
+            meta["title"] = self.title
         meta["created"] = self.created
         meta["updated"] = self.updated
         if self.tags:
