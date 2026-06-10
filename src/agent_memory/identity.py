@@ -13,6 +13,7 @@ def normalize_remote(url: str) -> str:
     """Normalize a git remote URL to host/owner/repo, lowercased, no .git."""
     u = url.strip().lower()
     u = re.sub(r"^https?://", "", u)
+    u = re.sub(r"^ssh://", "", u)
     u = re.sub(r"^git@", "", u)
     u = u.replace(":", "/", 1) if "@" not in u and ":" in u else u
     # git@host:owner/repo -> host/owner/repo (the ':' became '/')

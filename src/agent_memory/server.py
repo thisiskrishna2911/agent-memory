@@ -18,6 +18,14 @@ def _root() -> Path:
     return root
 
 
+def _safe(root: Path, rel: str) -> Path:
+    """Resolve a vault-relative path, rejecting traversal outside the vault."""
+    resolved = (root / rel).resolve()
+    if not resolved.is_relative_to(root.resolve()):
+        raise ValueError(f"Path escapes vault: {rel!r}")
+    return resolved
+
+
 @mcp.tool()
 def memory_list_projects(cwd: str = ".") -> dict:
     """List known project slugs and identity signals for the current folder.
@@ -44,7 +52,7 @@ def memory_search(query: str, scope: str | None = None,
 @mcp.tool()
 def memory_read(path: str) -> dict:
     """Read one full note by its vault-relative path."""
-    note = vault.read_note(_root() / path)
+    note = vault.read_note(_safe(_root(), path))
     return {"title": note.title, "type": note.type, "body": note.body,
             "tags": note.tags, "links": note.links, "updated": note.updated}
 
@@ -52,7 +60,9 @@ def memory_read(path: str) -> dict:
 @mcp.tool()
 def memory_traverse(path: str, depth: int = 1) -> list[dict]:
     """Return notes linked from `path` within `depth` hops (snippets only)."""
-    return graph.traverse(_root(), path, depth=depth)
+    root = _root()
+    _safe(root, path)  # reject traversal before walking the graph
+    return graph.traverse(root, path, depth=depth)
 
 
 @mcp.tool()
@@ -99,17 +109,20 @@ def memory_note(type: str, scope: str, title: str, body: str,
                 project: str | None = None,
                 links: list[str] | None = None) -> dict:
     """Write a durable note (decision/architecture/convention/glossary/preference)."""
-    path = notes_write.write_durable(_root(), type=type, scope=scope,
+    root = _root()
+    path = notes_write.write_durable(root, type=type, scope=scope,
                                      title=title, body=body, project=project,
                                      links=links)
-    return {"saved": str(path.relative_to(_root()))}
+    return {"saved": str(path.relative_to(root))}
 
 
 @mcp.tool()
 def memory_promote(session_path: str, as_type: str) -> dict:
     """Promote a session insight into a durable note linking back to its origin."""
-    path = notes_write.promote(_root(), session_path, as_type=as_type)
-    return {"saved": str(path.relative_to(_root()))}
+    root = _root()
+    _safe(root, session_path)  # reject traversal before reading the session
+    path = notes_write.promote(root, session_path, as_type=as_type)
+    return {"saved": str(path.relative_to(root))}
 
 
 @mcp.tool()

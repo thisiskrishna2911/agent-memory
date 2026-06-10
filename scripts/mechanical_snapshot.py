@@ -6,6 +6,7 @@ when no session is active (it just exits).
 """
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from datetime import datetime
@@ -53,7 +54,12 @@ def main() -> int:
         text = text[:text.index(_MARK)].rstrip() + "\n\n" + block
     else:
         text = text.rstrip() + "\n\n" + block
-    note_path.write_text(text)
+    # Atomic write: never truncate the live session note in place. A power-off
+    # mid-write (the exact thing this script guards against) must not leave the
+    # note empty or half-written.
+    tmp = note_path.with_suffix(note_path.suffix + ".tmp")
+    tmp.write_text(text)
+    os.replace(tmp, note_path)
     return 0
 
 

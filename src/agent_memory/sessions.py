@@ -32,7 +32,10 @@ def _find_active(vault_root: Path, project: str, task_slug: str) -> Path | None:
     if not d.is_dir():
         return None
     for md in d.glob("*.md"):
-        if md.stem.endswith(task_slug) and read_note(md).status == "active":
+        note = read_note(md)
+        # Match the stored task-slug tag exactly, not a filename suffix:
+        # `endswith` would let task "login" hijack a "social-login" session.
+        if note.status == "active" and task_slug in note.tags:
             return md
     return None
 
