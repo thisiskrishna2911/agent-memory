@@ -3,5 +3,29 @@
     "allow": [
       "Bash(python -c ' *)"
     ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/krishna.champaneria/Desktop/agent-memory && uv run python scripts/mechanical_snapshot.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/krishna.champaneria/Desktop/agent-memory && uv run python scripts/mechanical_snapshot.py"
+          }
+        ]
+      }
+    ]
   }
 }
